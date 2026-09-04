@@ -11,7 +11,7 @@ workflows:
         bundle_identifier: cc.lays.coops.saunders.group.building
       vars:
         APP_STORE_CONNECT_KEY: key
-        APP_STORE_APPLE_ID: 6808636324
+        APP_STORE_APPLE_ID: 6808650325
         BUNDLE_ID: "cc.lays.coops.saunders.group.building"
         XCODE_PROJECT: "BuildLayer.xcodeproj"
         XCODE_SCHEME: "BuildLayer"
