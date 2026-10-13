@@ -1,0 +1,115 @@
+# BuildLayer API — root .htaccess
+#
+# Use this when the whole `server/` folder is uploaded into the webroot (for
+# example public_html/api/) and the document root cannot be pointed at
+# `public/`. Everything is forwarded into public/index.php, and the directories
+# that were meant to sit above the webroot are denied instead.
+#
+# This is second best. The security model assumes src/, config/ and storage/ are
+# unreachable over HTTP; here they are reachable and merely denied, so the
+# protection rests on this file being honoured. If your host lets you set the
+# document root to `public/`, do that and delete this file.
+
+# ---------------------------------------------------------------------------
+# Forward every request into public/
+# ---------------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Already inside public/ — stop here. Without this the rule below rewrites
+    # its own output and Apache loops until it gives up with a 500.
+    RewriteRule ^public/ - [L]
+
+    # Block the sensitive directories before anything else can reach them.
+    # Doing it with a rewrite as well as a <Files> rule means the request is
+    # refused even where mod_authz_core is unavailable.
+    RewriteRule ^(src|config|migrations|storage|Tools)(/|$) - [F,L]
+    RewriteRule (^|/)\.(git|env|DS_Store) - [F,L]
+
+    # Carry the Authorization header across. Apache does not pass it to PHP
+    # under CGI/FastCGI, and without this every authenticated request arrives
+    # looking anonymous. It is set here as well as in public/.htaccess because
+    # this rewrite runs first.
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # The deployment check, served directly rather than routed into the API.
+    # Delete public/diagnose.php once the deployment is working.
+    RewriteRule ^diagnose\.php$ public/diagnose.php [L]
+
+    # Anything that exists on disk is served as itself.
+    #
+    # Without this the catch-all below swallows every real file — privacy.html
+    # and support.html included — and answers them with the API's JSON 404,
+    # which is exactly as confusing as it sounds. The deny rules above run
+    # first, so src/, config/, storage/ and dotfiles stay refused even though
+    # they are real directories.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # A static file kept inside public/ — the tidier home for anything served
+    # to a browser, since that is what the directory is for. Mapped by
+    # extension rather than by a filesystem test, because a per-directory
+    # RewriteCond cannot reliably build the path to public/ when the project is
+    # mounted in a subdirectory. A name that is not there falls through to
+    # Apache's own 404, which is the right answer for a missing page.
+    RewriteRule ^(.+\.(?:html|css|js|map|png|jpe?g|gif|svg|webp|ico|txt|xml|webmanifest|woff2?|ttf))$ public/$1 [L]
+
+    # Everything else is the API.
+    RewriteRule ^ public/index.php [L]
+</IfModule>
+
+# If mod_rewrite is missing, nothing above runs — so make sure the directory
+# listing cannot be browsed and there is no index to serve.
+Options -Indexes
+
+<IfModule mod_dir.c>
+    DirectoryIndex public/index.php
+</IfModule>
+
+<IfModule mod_setenvif.c>
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+</IfModule>
+
+# ---------------------------------------------------------------------------
+# Deny the files that must never be served, whatever the rewrite does
+# ---------------------------------------------------------------------------
+<FilesMatch "\.(sql|md|log|ini|yml|yaml|lock|swift|sample\.php)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+<FilesMatch "^\.">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# ---------------------------------------------------------------------------
+# Headers. Repeated here as well as in public/ because a denied request never
+# reaches public/.htaccess.
+# ---------------------------------------------------------------------------
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "no-referrer"
+    Header unset X-Powered-By
+</IfModule>
+
+# Same policy as public/.htaccess, repeated because a static page may be served
+# from this directory rather than from public/ depending on where it was put.
+<FilesMatch "\.html$">
+    <IfModule mod_headers.c>
+        Header always set Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    </IfModule>
+</FilesMatch>

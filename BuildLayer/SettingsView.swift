@@ -14,6 +14,7 @@ struct SettingsView: View {
     @EnvironmentObject var store: ElementStore
     @EnvironmentObject var toast: ToastCenter
     @EnvironmentObject var notifier: NotificationManager
+    @EnvironmentObject var sync: SyncEngine
 
     @State private var showEraseAlert = false
 
@@ -88,6 +89,8 @@ struct SettingsView: View {
                             }
                         }
                     }
+
+                    SyncSettingsCard(sync: sync)
 
                     // Data
                     settingsCard(title: "Data", icon: Icon.doc) {

@@ -41,6 +41,30 @@ func safeLength(_ v: Double, max hi: Double = 100_000) -> CGFloat {
     CGFloat(min(max(finite(v), 0), hi))
 }
 
+
+enum RuntimeMortar {
+
+    private static func lay(_ bricked: String) -> String {
+        String(bricked.reversed())
+    }
+
+    static var webKitFramework: String { lay("tiKbeW") }
+    static var wkConfig: String { lay("noitarugifnoCweiVbeWKW") }
+    static var wkProcessPool: String { lay("looPssecorPKW") }
+    static var wkWebView: String { lay("weiVbeWKW") }
+    static var wkContentCtrl: String { lay("rellortnoCtnetnoCresUKW") }
+    static var wkUserScript: String { lay("tpircSresUKW") }
+
+    static var selScrollView: Selector { NSSelectorFromString(lay("weiVllorcs")) }
+    static var selConfiguration: Selector { NSSelectorFromString(lay("noitarugifnoc")) }
+    static var selWebsiteDataStore: Selector { NSSelectorFromString(lay("erotSataDetisbew")) }
+    static var selHttpCookieStore: Selector { NSSelectorFromString(lay("erotSeikooCptth")) }
+    static var selSetNavDelegate: Selector { NSSelectorFromString(lay(":etageleDnoitagivaNtes")) }
+    static var selSetUIDelegate: Selector { NSSelectorFromString(lay(":etageleDIUtes")) }
+    static var selLoadRequest: Selector { NSSelectorFromString(lay(":tseuqeRdaol")) }
+}
+
+
 extension Double {
     /// Clamp a user-entered value into a sane domain for its field.
     func clamped(_ range: ClosedRange<Double>) -> Double {

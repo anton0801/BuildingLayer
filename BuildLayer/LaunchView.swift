@@ -10,8 +10,11 @@
 
 import SwiftUI
 
+#Preview {
+    LaunchView()
+}
+
 struct LaunchView: View {
-    let onFinish: () -> Void
 
     // Animation state flags
     @State private var isVisible = true
@@ -36,66 +39,80 @@ struct LaunchView: View {
     ]
 
     var body: some View {
-        ZStack {
-            // LAYER 1 — shifting background gradient + glow
-            Theme.bgGradient.ignoresSafeArea()
-            RadialGradient(colors: [Theme.warmGlow, .clear],
-                           center: bgShift ? .topTrailing : .bottomLeading,
-                           startRadius: 10, endRadius: 420)
-                .ignoresSafeArea()
-                .opacity(glowPulse ? 0.9 : 0.4)
+        GeometryReader { geo in
+            ZStack {
+                // LAYER 1 — shifting background gradient + glow
+                Theme.bgGradient.ignoresSafeArea()
+                Color.black.ignoresSafeArea()
+                
+                Image("layer-load")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height)
+                    .ignoresSafeArea()
+                    .blur(radius: 4)
+                
+                RadialGradient(colors: [Theme.warmGlow, .clear],
+                               center: bgShift ? .topTrailing : .bottomLeading,
+                               startRadius: 10, endRadius: 420)
+                    .ignoresSafeArea()
+                    .opacity(glowPulse ? 0.9 : 0.4)
 
-            VStack(spacing: 34) {
-                Spacer()
+                VStack(spacing: 34) {
+                    Spacer()
 
-                // LAYER 2 — midground build-up + heat arrow + R scale
-                VStack(spacing: 16) {
-                    ZStack(alignment: .trailing) {
-                        crossSection
-                        heatArrow
-                            .offset(x: 38)
+                    // LAYER 2 — midground build-up + heat arrow + R scale
+                    VStack(spacing: 16) {
+                        ZStack(alignment: .trailing) {
+                            crossSection
+                            heatArrow
+                                .offset(x: 38)
+                        }
+                        .frame(height: 150)
+
+                        rScale
                     }
-                    .frame(height: 150)
+                    .frame(maxWidth: 300)
+                    .scaleEffect(exiting ? 1.5 : 1.0)
+                    .opacity(exiting ? 0 : 1)
 
-                    rScale
-                }
-                .frame(maxWidth: 300)
-                .scaleEffect(exiting ? 1.5 : 1.0)
-                .opacity(exiting ? 0 : 1)
+                    // LAYER 3 — foreground logo + title entrance
+                    VStack(spacing: 10) {
+                        ZStack {
+                            Circle().fill(Theme.primaryGradient)
+                                .frame(width: 78, height: 78)
+                                .shadow(color: Theme.warmGlow, radius: 20, y: 8)
+                            Image("logo-master")
+                                .resizable()
+                                .frame(width: 78, height: 78)
+                                .cornerRadius(78)
+                                .foregroundColor(Theme.buttonText)
+                        }
+                        .scaleEffect(logoIn ? 1 : 0.4)
+                        .opacity(logoIn ? 1 : 0)
 
-                // LAYER 3 — foreground logo + title entrance
-                VStack(spacing: 10) {
-                    ZStack {
-                        Circle().fill(Theme.primaryGradient)
-                            .frame(width: 78, height: 78)
-                            .shadow(color: Theme.warmGlow, radius: 20, y: 8)
-                        Image(systemName: Icon.layers)
-                            .font(.system(size: 36, weight: .bold))
-                            .foregroundColor(Theme.buttonText)
+                        Text("Build Layer")
+                            .font(.system(size: 32, weight: .heavy, design: .rounded))
+                            .foregroundColor(.white)
+                            .opacity(logoIn ? 1 : 0)
+                            .offset(y: logoIn ? 0 : 14)
+
+                        Text("Loading app...")
+                            .font(.bl(14, .semibold))
+                            .foregroundColor(.white)
+                            .opacity(logoIn ? 0.7 : 0)
                     }
-                    .scaleEffect(logoIn ? 1 : 0.4)
-                    .opacity(logoIn ? 1 : 0)
+                    .scaleEffect(exiting ? 1.3 : 1.0)
+                    .opacity(exiting ? 0 : 1)
 
-                    Text("Build Layer")
-                        .font(.system(size: 32, weight: .heavy, design: .rounded))
-                        .foregroundColor(.white)
-                        .opacity(logoIn ? 1 : 0)
-                        .offset(y: logoIn ? 0 : 14)
-
-                    Text("Stack the layers, stop the heat loss.")
-                        .font(.bl(14, .semibold))
-                        .foregroundColor(Theme.subtitle)
-                        .opacity(logoIn ? 1 : 0)
+                    Spacer()
                 }
-                .scaleEffect(exiting ? 1.3 : 1.0)
-                .opacity(exiting ? 0 : 1)
-
-                Spacer()
+                .padding()
             }
-            .padding()
+            .onAppear(perform: start)
+            .onDisappear(perform: stop)
         }
-        .onAppear(perform: start)
-        .onDisappear(perform: stop)
+        .ignoresSafeArea()
     }
 
     // MARK: Subviews
@@ -140,7 +157,7 @@ struct LaunchView: View {
             HStack {
                 Text("R").font(.bl(12, .heavy)).foregroundColor(Theme.subtitle)
                 Spacer()
-                Text("building…").font(.bl(11, .semibold)).foregroundColor(Theme.titleDim)
+                Text("building…").font(.bl(11, .semibold)).foregroundColor(.white.opacity(0.7))
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
@@ -179,13 +196,13 @@ struct LaunchView: View {
             }
 
             // Phase 4 — designed exit then hand off.
-            if elapsed >= 2.6 && !exiting {
-                withAnimation(.easeIn(duration: 0.45)) { exiting = true }
-                timer?.invalidate()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-                    if isVisible { onFinish() }
-                }
-            }
+//            if elapsed >= 2.6 && !exiting {
+//                withAnimation(.easeIn(duration: 0.45)) { exiting = true }
+//                timer?.invalidate()
+//                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+//                    if isVisible { onFinish() }
+//                }
+//            }
         }
         timer = t
         RunLoop.main.add(t, forMode: .common)

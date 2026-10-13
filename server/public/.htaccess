@@ -1,0 +1,64 @@
+# BuildLayer API — Apache configuration for the webroot.
+
+# Route everything to the front controller.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# HTTPS is enforced in PHP (Kernel::requireHttps), not here.
+#
+# This used to be a hard [F] block on two conditions: %{HTTPS}=on and
+# X-Forwarded-Proto. On hosting that terminates TLS upstream and advertises it
+# any other way — LiteSpeed, a load balancer, Cloudflare — that refused every
+# genuine HTTPS request with an opaque Apache 403, before PHP could look at the
+# half-dozen other signals it can see. mod_rewrite has strictly less
+# information here than PHP does, and its failure mode is an HTML error page
+# with nothing in it to debug.
+
+# The Authorization header is stripped by some CGI/FastCGI setups before PHP
+# sees it, which would make every authenticated call look anonymous.
+<IfModule mod_rewrite.c>
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+</IfModule>
+<IfModule mod_setenvif.c>
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "no-referrer"
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    # The response never contains markup, so everything is denied outright.
+    # Default: the API's JSON. It contains no markup, so nothing is allowed.
+    Header always set Content-Security-Policy "default-src 'none'; frame-ancestors 'none'"
+    Header unset X-Powered-By
+</IfModule>
+
+# Static pages need their own policy.
+#
+# The blanket "default-src 'none'" above was written for JSON responses and is
+# correct for them — but it also blocked the privacy and support pages' own
+# inline <style> block, so they rendered as unstyled browser default. Still no
+# scripts and no framing; only what a static page actually needs.
+<FilesMatch "\.html$">
+    <IfModule mod_headers.c>
+        Header always set Content-Security-Policy "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; script-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    </IfModule>
+</FilesMatch>
+
+# No directory listing, ever.
+Options -Indexes
+
+# Belt and braces: even if src/ or config/ ends up inside the webroot by
+# accident, these must not be served.
+<FilesMatch "\.(sql|md|log|ini|sample\.php|yml|yaml|lock|json)$">
+    Require all denied
+</FilesMatch>
+<FilesMatch "^(config|\.env|\.git)">
+    Require all denied
+</FilesMatch>

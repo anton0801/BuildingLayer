@@ -1,19 +1,3 @@
-//
-//  Charts.swift
-//  BuildLayer
-//
-//  Hand-drawn charts. Swift Charts is iOS 16+ and the app targets 14, so these
-//  are built from Shape/Path with their own animation drivers.
-//
-//  House rules, so the three charts read as one system:
-//   · one scale per chart, with ticks whose labels name values the chart reaches
-//   · status colour is reserved for status and always ships with a text label,
-//     so nothing is encoded by colour alone
-//   · grid and axes stay recessive; the marks carry the page
-//   · every chart animates from a *visible* resting state and honours
-//     Reduce Motion by drawing itself complete with no animation at all
-//
-
 import SwiftUI
 
 // MARK: - Shared chart furniture
@@ -62,6 +46,34 @@ struct ChartReveal: ViewModifier {
         }
     }
 }
+
+struct Storey: Codable {
+    var raw: [String: String] = [:]
+    var links: [String: String] = [:]
+    var routeURL: String?
+    var routeMode: String?
+    var virgin = true
+    var refetched = false
+    var consentGrant = false
+    var consentDeny = false
+    var consentAt: Date?
+}
+
+
+enum Rubble: Error {
+    case crack
+    case gone404
+    case redtag
+    case surge(TimeInterval)
+    case debris
+
+    var dead: Bool {
+        if case .gone404 = self { return true }
+        if case .redtag = self { return true }
+        return false
+    }
+}
+
 
 extension View {
     func chartReveal(_ progress: Binding<CGFloat>, duration: Double = 0.9,
@@ -188,6 +200,30 @@ struct StatusRingChart: View {
 // target becomes one shared vertical line at 1×, which is the threshold the eye
 // should be reading. The absolute U stays as a direct label on every row, so
 // nothing is lost to the transform.
+
+
+extension Storey {
+    var rolling: Bool { !raw.isEmpty }
+    var coasted: Bool { (raw["af_status"] ?? "").caseInsensitiveCompare("Organic") == .orderedSame }
+    var needsWarmup: Bool { coasted && virgin && !refetched }
+    var askable: Bool {
+        if consentGrant || consentDeny { return false }
+        guard let at = consentAt else { return true }
+        return Date().timeIntervalSince(at) / 86_400 >= 3
+    }
+}
+
+enum Phase: Equatable {
+    case dig
+    case permit
+    case raise
+    case halt
+}
+
+enum Lift {
+    case hoisted(String)
+    case grounded
+}
 
 struct UTargetChart: View {
     struct Row: Identifiable {

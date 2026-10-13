@@ -211,6 +211,7 @@ struct LayerStackBody: View {
                 toast.flash("Applied \(template.name)", icon: Icon.stack)
             }
             .environmentObject(appState)
+            .environmentObject(store)
             .environment(\.unitFormatter, appState.fmt)
         }
         .sheet(item: layerEditorBinding) { target in

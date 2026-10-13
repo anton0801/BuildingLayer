@@ -318,6 +318,7 @@ struct ElementCaptureView: View {
                 toast.flash("Applied \(template.name)", icon: Icon.stack)
             }
             .environmentObject(appState)
+            .environmentObject(store)
             .environment(\.unitFormatter, f)
         }
         .onAppear(perform: loadIfNeeded)
@@ -434,6 +435,7 @@ struct ElementCaptureView: View {
 
 struct TemplatePickerSheet: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var store: ElementStore
     @Environment(\.presentationMode) var presentationMode
     let type: ElementType
     let onPick: (BuildUpTemplate) -> Void
@@ -451,7 +453,7 @@ struct TemplatePickerSheet: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                         ChipSelector(options: ElementType.allCases, selection: $shownType,
                                      label: { $0.rawValue }, icon: { $0.icon }, onCard: false)
-                        ForEach(TemplateLibrary.templates(for: shownType)) { template in
+                        ForEach(store.templates(for: shownType)) { template in
                             Button {
                                 onPick(template)
                                 presentationMode.wrappedValue.dismiss()

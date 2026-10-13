@@ -1,0 +1,15 @@
+# Secrets — never commit. config.php holds the database password and the key
+# that signs every API request.
+server/config/config.php
+
+# Uploaded photo bytes live here on a deployed server.
+server/storage/photos/
+
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+
+# macOS
+.DS_Store

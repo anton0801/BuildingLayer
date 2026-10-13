@@ -346,29 +346,88 @@ struct RemindersReportsView: View {
 
     private func reminderRow(_ rem: Reminder) -> some View {
         let overdue = rem.date < Date()
+        // A paused reminder is dimmed, and a passed one is dimmed too — both
+        // are inert, and the row should say so before the text does.
+        let inert = overdue || !rem.isOn
+        let accent = inert ? Theme.cardInactive : Theme.primary
+
         return BLCard(padding: 13) {
-            HStack(spacing: 12) {
-                Image(systemName: rem.kind.icon).font(.system(size: 15, weight: .bold))
-                    .foregroundColor(overdue ? Theme.cardInactive : Theme.primary)
+            HStack(spacing: 10) {
+                Image(systemName: rem.isOn ? rem.kind.icon : Icon.bellSlash)
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundColor(accent)
                     .frame(width: 36, height: 36)
-                    .background((overdue ? Theme.cardInactive : Theme.primary).opacity(0.14))
+                    .background(accent.opacity(0.14))
                     .clipShape(RoundedRectangle(cornerRadius: 10))
+
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(rem.kind.rawValue).font(.bl(14, .bold)).foregroundColor(Theme.cardText)
-                    Text(DateFormatter.blDateTime.string(from: rem.date) + (overdue ? " · passed" : ""))
+                    Text(rem.kind.rawValue).font(.bl(14, .bold))
+                        .foregroundColor(inert ? Theme.cardInactive : Theme.cardText)
+                        .lineLimit(1)
+                    Text(statusLine(for: rem, overdue: overdue))
                         .font(.bl(11, .semibold))
                         .foregroundColor(overdue ? Theme.warn : Theme.cardSubtext)
+                        .lineLimit(1).minimumScaleFactor(0.85)
                     if !rem.elementName.isEmpty {
-                        Text(rem.elementName).font(.bl(11, .semibold)).foregroundColor(Theme.layer).lineLimit(1)
+                        Text(rem.elementName).font(.bl(11, .semibold))
+                            .foregroundColor(inert ? Theme.cardInactive : Theme.layer).lineLimit(1)
                     }
                 }
-                Spacer()
+                Spacer(minLength: 4)
+
+                Toggle("", isOn: pauseBinding(for: rem))
+                    .labelsHidden()
+                    .toggleStyle(SwitchToggleStyle(tint: Theme.primary))
+                    // Re-arming a reminder whose time has passed cannot work —
+                    // a calendar trigger in the past never fires.
+                    .disabled(overdue)
+                    .accessibility(label: Text(rem.isOn ? "Pause reminder" : "Resume reminder"))
+
                 Button {
                     notifier.cancel(rem); store.deleteReminder(rem); appState.haptic()
                     toast.flash("Reminder removed", icon: Icon.trash)
-                } label: { Image(systemName: Icon.trash).foregroundColor(Theme.fail) }
+                } label: {
+                    Image(systemName: Icon.trash).foregroundColor(Theme.fail)
+                        .frame(width: 30, height: 34)
+                }
+                .buttonStyle(PlainButtonStyle())
             }
         }
+    }
+
+    private func statusLine(for rem: Reminder, overdue: Bool) -> String {
+        let when = DateFormatter.blDateTime.string(from: rem.date)
+        if overdue { return when + " · passed" }
+        if !rem.isOn { return when + " · paused" }
+        return when
+    }
+
+    /// Flipping the switch has to move the scheduled notification too —
+    /// otherwise the row would say "paused" while iOS still fired it.
+    private func pauseBinding(for rem: Reminder) -> Binding<Bool> {
+        Binding(
+            get: { store.reminders.first(where: { $0.id == rem.id })?.isOn ?? rem.isOn },
+            set: { on in
+                appState.haptic()
+                if on {
+                    guard rem.date > Date() else {
+                        toast.flash("That time has passed — set a new reminder", icon: Icon.warning)
+                        return
+                    }
+                    notifier.schedule(rem) { ok in
+                        if ok {
+                            store.setReminder(rem.id, isOn: true)
+                            toast.flash("Reminder resumed", icon: Icon.bell)
+                        } else {
+                            toast.flash("Allow notifications to resume this", icon: Icon.warning)
+                        }
+                    }
+                } else {
+                    notifier.cancel(rem)
+                    store.setReminder(rem.id, isOn: false)
+                    toast.flash("Reminder paused", icon: Icon.bellSlash)
+                }
+            })
     }
 
     private func sectionToggle(_ title: String, _ binding: Binding<Bool>) -> some View {

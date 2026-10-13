@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<meta name="description" content="{{DESCRIPTION}}">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="{{TITLE}}">
+<meta property="og:description" content="{{DESCRIPTION}}">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/*
+  Colours and type are taken from the app's own design system (Theme.swift), so
+  the page a user lands on from the App Store looks like the app they came from.
+  Committed to a single dark treatment rather than following prefers-color-scheme:
+  the app's identity is navy-and-orange, and a light variant would read as a
+  different product.
+*/
+:root{
+  --bg:#0D1A2D;
+  --bg-deep:#081223;
+  --bg-soft:#13243B;
+  --card:#FFFFFF;
+  --card-blue:#EAF1FB;
+  --card-border:#C6D8ED;
+  --ink:#102A4A;
+  --ink-soft:#44587A;
+  --ink-faint:#7187A6;
+  --title:#FFFFFF;
+  --subtitle:#A9C0DE;
+  --dim:#8AA0BE;
+  --accent:#F77B1C;
+  --accent-hi:#FF9B4E;
+  --accent-deep:#E0660A;
+  --gold:#F4C32C;
+  --pass:#38C172;
+  --cold:#34C6E0;
+  --divider:rgba(255,255,255,.12);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  background-image:linear-gradient(180deg,var(--bg-deep) 0%,var(--bg) 42%,var(--bg-soft) 100%);
+  background-attachment:fixed;
+  color:var(--title);
+  font-family:Nunito,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:17px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+
+.shell{max-width:780px;margin:0 auto;padding:0 20px 80px}
+
+/* ---------- header ---------- */
+header.site{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:22px 0 18px;border-bottom:1px solid var(--divider);
+}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--title);margin-right:auto}
+.brand .mark{
+  width:38px;height:38px;border-radius:11px;flex:0 0 auto;
+  background:linear-gradient(135deg,var(--accent-hi),var(--accent) 55%,var(--accent-deep));
+  box-shadow:0 6px 18px rgba(247,123,28,.34);
+  display:grid;place-items:center;
+}
+.brand .mark svg{display:block}
+.brand b{font-weight:800;font-size:17px;letter-spacing:-.01em}
+nav.site{display:flex;gap:8px}
+nav.site a{
+  color:var(--subtitle);text-decoration:none;font-weight:700;font-size:14px;
+  padding:7px 13px;border-radius:999px;border:1px solid transparent;
+}
+nav.site a:hover{color:var(--title);background:rgba(255,255,255,.06)}
+nav.site a[aria-current="page"]{color:#0D1A2D;background:var(--accent);border-color:transparent}
+
+/* ---------- hero ---------- */
+.hero{padding:44px 0 30px}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 12px;
+}
+h1{
+  margin:0 0 14px;font-size:clamp(30px,6vw,44px);font-weight:800;
+  line-height:1.1;letter-spacing:-.022em;text-wrap:balance;
+}
+.lead{margin:0;color:var(--subtitle);font-size:18px;max-width:60ch}
+.meta{
+  margin:18px 0 0;font-family:"IBM Plex Mono",monospace;
+  font-size:12.5px;color:var(--dim);
+}
+
+/* ---------- the white sheet the content sits on ---------- */
+.sheet{
+  background:var(--card);color:var(--ink);
+  border-radius:20px;border:1px solid var(--card-border);
+  box-shadow:0 24px 60px -28px rgba(0,0,0,.75);
+  padding:34px 32px;
+}
+@media (max-width:560px){ .sheet{padding:26px 20px;border-radius:16px} }
+
+.sheet h2{
+  font-size:23px;font-weight:800;letter-spacing:-.012em;
+  margin:34px 0 10px;padding-top:20px;border-top:1px solid var(--card-border);
+  color:var(--ink);text-wrap:balance;
+}
+.sheet > h2:first-child{margin-top:0;padding-top:0;border-top:0}
+.sheet h3{font-size:18px;font-weight:800;margin:26px 0 8px;color:var(--ink)}
+.sheet h4{font-size:16px;font-weight:700;margin:20px 0 6px;color:var(--ink)}
+.sheet p{margin:0 0 14px;color:var(--ink-soft)}
+.sheet strong{color:var(--ink);font-weight:700}
+.sheet ul{margin:0 0 16px;padding-left:22px;color:var(--ink-soft)}
+.sheet li{margin-bottom:7px}
+.sheet li::marker{color:var(--accent)}
+.sheet a{color:var(--accent-deep);text-decoration:underline;text-underline-offset:2px}
+.sheet a:hover{color:var(--accent)}
+.sheet hr{border:0;border-top:1px solid var(--card-border);margin:28px 0}
+.sheet code{
+  font-family:"IBM Plex Mono",monospace;font-size:14px;
+  background:var(--card-blue);padding:2px 6px;border-radius:5px;color:var(--ink);
+}
+.sheet > p:last-child{margin-bottom:0}
+
+/* ---------- support-page pieces ---------- */
+.cards{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin:0 0 26px}
+/* These sit inside the white sheet, so they take the sheet's palette. Styled
+   for the dark ground they read as holes punched in the page. */
+.card{
+  background:var(--card-blue);border:1px solid var(--card-border);
+  border-radius:14px;padding:18px 20px;
+}
+.card h3{margin:0 0 6px;font-size:16px;font-weight:800;color:var(--ink)}
+.card p{margin:0;color:var(--ink-soft);font-size:15px}
+.card a{color:var(--accent-deep);text-decoration:none;font-weight:700;word-break:break-word}
+.card a:hover{text-decoration:underline}
+.card .muted{margin-top:6px;font-size:13.5px;color:var(--ink-faint)}
+
+details.faq{
+  border-bottom:1px solid var(--card-border);
+  padding:2px 0;
+}
+details.faq:last-of-type{border-bottom:0}
+details.faq > summary{
+  cursor:pointer;list-style:none;padding:16px 34px 16px 0;position:relative;
+  font-weight:700;font-size:17px;color:var(--ink);
+}
+details.faq > summary::-webkit-details-marker{display:none}
+details.faq > summary::after{
+  content:"";position:absolute;right:6px;top:24px;
+  width:9px;height:9px;border-right:2.4px solid var(--accent);border-bottom:2.4px solid var(--accent);
+  transform:rotate(45deg);transition:transform .18s ease;
+}
+details.faq[open] > summary::after{transform:rotate(225deg)}
+details.faq > summary:hover{color:var(--accent-deep)}
+details.faq .answer{padding:0 0 18px}
+details.faq .answer > :last-child{margin-bottom:0}
+
+.path{
+  font-family:"IBM Plex Mono",monospace;font-size:13.5px;
+  background:var(--card-blue);padding:2px 7px;border-radius:5px;
+  color:var(--ink);white-space:nowrap;
+}
+.note{
+  background:var(--card-blue);border-left:3px solid var(--accent);
+  border-radius:0 10px 10px 0;padding:14px 16px;margin:0 0 16px;
+}
+.note p{margin:0;color:var(--ink)}
+
+footer.site{
+  margin-top:34px;padding-top:20px;border-top:1px solid var(--divider);
+  color:var(--dim);font-size:14px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;
+}
+footer.site a{color:var(--subtitle);text-decoration:none}
+footer.site a:hover{color:var(--title);text-decoration:underline}
+footer.site .spacer{margin-left:auto}
+
+a:focus-visible,summary:focus-visible{outline:3px solid var(--accent-hi);outline-offset:3px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body class="{{PAGE_CLASS}}">
+<div class="shell">
+
+  <header class="site">
+    <a class="brand" href="/">
+      <span class="mark" aria-hidden="true">
+        <!-- Three stacked layers: the app's subject, drawn rather than emoji. -->
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2.6 18 6.3 10 10 2 6.3z" fill="#0D1A2D" opacity=".92"/>
+          <path d="M3.6 9.4 10 12.4l6.4-3" stroke="#0D1A2D" stroke-width="1.7"
+                stroke-linecap="round" stroke-linejoin="round" opacity=".62"/>
+          <path d="M3.6 12.9 10 15.9l6.4-3" stroke="#0D1A2D" stroke-width="1.7"
+                stroke-linecap="round" stroke-linejoin="round" opacity=".38"/>
+        </svg>
+      </span>
+      <b>Building Layer</b>
+    </a>
+    <nav class="site">
+      <a href="/privacy.html"{{ACTIVE_PRIVACY}}>Privacy</a>
+      <a href="/support.html"{{ACTIVE_SUPPORT}}>Support</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <p class="eyebrow">{{EYEBROW}}</p>
+    <h1>{{HEADING}}</h1>
+    <p class="lead">{{LEAD}}</p>
+    <p class="meta">{{META}}</p>
+  </section>
+
+  <main class="sheet">
+{{BODY}}
+  </main>
+
+  <footer class="site">
+    <span>Building Layer — thermal calculator for building elements</span>
+    <span class="spacer"></span>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/support.html">Support</a>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Never served over HTTP. This directory is only reachable because the whole
+# project was uploaded into the webroot; nothing in it is a web resource.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
+Options -Indexes

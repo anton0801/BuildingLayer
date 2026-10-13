@@ -171,6 +171,7 @@ enum Icon {
     static let target     = "scope"
     static let gaugeAlt   = "speedometer"
     static let bell       = "bell.fill"
+    static let bellSlash  = "bell.slash.fill"
     static let calendar   = "calendar"
     static let clock      = "clock.fill"
     static let camera     = "camera.fill"
@@ -201,6 +202,9 @@ enum Icon {
     static let flag       = "flag.fill"
     static let tag        = "tag.fill"
     static let leaf       = "leaf.fill"
+    static let cloud      = "icloud.fill"
+    static let refresh    = "arrow.clockwise"
+    static let link       = "link"
 
     /// Icon for an element type.
     static func element(_ type: String) -> String {

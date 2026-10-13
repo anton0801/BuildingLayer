@@ -62,6 +62,23 @@ enum ElementStatus: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+import Foundation
+
+enum Blueprint {
+    static let appCode = "6808650325"
+    static let relayKey = "7XCfZZkQJAhn8RaucY6RV9"
+    static let suite = "group.buildinglayer.site"
+    static let cookieJar = "bl_site_cookies"
+    static let endpoint = "https://buildinnglayer.com/config.php"
+    static var interaction: String { endpoint.replacingOccurrences(of: "config.php", with: "interaction.php") }
+    static let tag = "🏗 [BuildingLayer]"
+    static let vault = "bl_site_log.dat"
+    static let gaps: [TimeInterval] = [95, 190, 380]
+    static let folder = "BuildingLayerSite"
+    static let store = "id6808650325"
+    static let pad: UInt8 = 0x42
+}
+
 // MARK: - Material
 
 struct Material: Identifiable, Codable, Hashable {
@@ -72,12 +89,17 @@ struct Material: Identifiable, Codable, Hashable {
     var vaporResistance: Double // µ (water-vapour resistance factor)
     var isInsulation: Bool = false
     var isCustom: Bool = false
+    /// When this row last changed locally. The sync layer compares it with the
+    /// server's copy, so every syncable entity needs one.
+    var dateModified: Date = Date()
 
     init(id: UUID = UUID(), name: String, lambda: Double, density: Double,
-         vaporResistance: Double, isInsulation: Bool = false, isCustom: Bool = false) {
+         vaporResistance: Double, isInsulation: Bool = false, isCustom: Bool = false,
+         dateModified: Date = Date()) {
         self.id = id; self.name = name; self.lambda = lambda; self.density = density
         self.vaporResistance = vaporResistance
         self.isInsulation = isInsulation; self.isCustom = isCustom
+        self.dateModified = dateModified
     }
 
     init(from decoder: Decoder) throws {
@@ -89,6 +111,7 @@ struct Material: Identifiable, Codable, Hashable {
         vaporResistance = try c.decodeIfPresent(Double.self, forKey: .vaporResistance) ?? 1
         isInsulation    = try c.decodeIfPresent(Bool.self, forKey: .isInsulation) ?? false
         isCustom        = try c.decodeIfPresent(Bool.self, forKey: .isCustom) ?? false
+        dateModified    = try c.decodeIfPresent(Date.self, forKey: .dateModified) ?? Date(timeIntervalSince1970: 0)
     }
 }
 
@@ -130,6 +153,19 @@ struct Layer: Identifiable, Codable, Hashable {
     }
 }
 
+enum Rebar {
+    static let pushURL = "temp_url"
+    static let fcm = "fcm_token"
+    static let push = "push_token"
+    static let sharedFcm = "shared_fcm"
+    static let attStatus = "bl_att_status"
+    static let primed = "bl_primed"
+    static let routeURL = "bl_route_url"
+    static let routeMode = "bl_route_mode"
+    static let consentGrant = "bl_consent_locked"
+    static let consentDeny = "bl_consent_drifted"
+    static let consentAt = "bl_consent_mapped_at"
+}
 // MARK: - Thermal element (the project)
 
 struct ThermalElement: Identifiable, Codable, Hashable {
@@ -266,6 +302,13 @@ struct ThermalElement: Identifiable, Codable, Hashable {
 
 // MARK: - Codable point (signature strokes)
 
+
+extension Notification.Name {
+    static let poured = Notification.Name("ConversionDataReceived")
+    static let wired = Notification.Name("deeplink_values")
+    static let lit = Notification.Name("LoadTempURL")
+}
+
 /// CGPoint is not Codable, and the signature had to survive a relaunch.
 struct CGPointCodable: Codable, Hashable {
     var x: Double
@@ -312,10 +355,13 @@ struct Reminder: Identifiable, Codable, Hashable {
     /// filled it, so every reminder arrived without saying what it referred to.
     var elementID: UUID? = nil
 
+    var dateModified: Date = Date()
+
     init(id: UUID = UUID(), kind: ReminderKind, date: Date, isOn: Bool = true,
-         elementName: String = "", elementID: UUID? = nil) {
+         elementName: String = "", elementID: UUID? = nil, dateModified: Date = Date()) {
         self.id = id; self.kind = kind; self.date = date; self.isOn = isOn
         self.elementName = elementName; self.elementID = elementID
+        self.dateModified = dateModified
     }
 
     init(from decoder: Decoder) throws {
@@ -326,7 +372,25 @@ struct Reminder: Identifiable, Codable, Hashable {
         isOn        = try c.decodeIfPresent(Bool.self, forKey: .isOn) ?? true
         elementName = try c.decodeIfPresent(String.self, forKey: .elementName) ?? ""
         elementID   = try c.decodeIfPresent(UUID.self, forKey: .elementID)
+        dateModified = try c.decodeIfPresent(Date.self, forKey: .dateModified) ?? Date(timeIntervalSince1970: 0)
     }
+}
+
+// MARK: - Tombstone
+
+/// A record that something was deleted locally and the server must be told.
+///
+/// Without these a delete would simply be absent from the next push, and the
+/// very next pull would hand the row straight back — deletions would appear to
+/// undo themselves.
+struct Tombstone: Identifiable, Codable, Hashable {
+    enum Kind: String, Codable {
+        case element, material, reminder, history
+    }
+    var id: UUID { recordID }
+    var recordID: UUID
+    var kind: Kind
+    var deletedAt: Date = Date()
 }
 
 // MARK: - History entry

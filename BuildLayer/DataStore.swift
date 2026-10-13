@@ -144,11 +144,18 @@ final class ElementStore: ObservableObject {
     @Published var materials: [Material] = []     { didSet { persistMaterials() } }
     @Published var reminders: [Reminder] = []     { didSet { persistReminders() } }
     @Published var history: [HistoryEntry] = []   { didSet { persistHistory() } }
+    /// Deletions waiting to be told to the server.
+    @Published var tombstones: [Tombstone] = []  { didSet { persistTombstones() } }
+    /// Build-up templates as last served by /v1/library, cached so the
+    /// templates screen still works with no connection.
+    @Published var remoteTemplates: [BuildUpTemplate] = [] { didSet { persistTemplates() } }
 
     private let elementsKey = "store.elements"
     private let materialsKey = "store.materials"
     private let remindersKey = "store.reminders"
     private let historyKey = "store.history"
+    private let tombstonesKey = "store.tombstones"
+    private let templatesKey = "store.templates"
     private var ready = false   // skip the didSet write-back while loading in init
     private let writer = WriteCoalescer()
 
@@ -160,6 +167,8 @@ final class ElementStore: ObservableObject {
         materials = LocalStore.load([Material].self, key: materialsKey) ?? Self.defaultMaterials
         reminders = LocalStore.load([Reminder].self, key: remindersKey) ?? []
         history   = LocalStore.load([HistoryEntry].self, key: historyKey) ?? []
+        tombstones = LocalStore.load([Tombstone].self, key: tombstonesKey) ?? []
+        remoteTemplates = LocalStore.load([BuildUpTemplate].self, key: templatesKey) ?? []
         ready = true
         // Reconcile stored statuses with what the engine now says. The status
         // was only recomputed on certain actions, so a card could show
@@ -173,6 +182,8 @@ final class ElementStore: ObservableObject {
     private func persistMaterials() { guard ready else { return }; writer.schedule(materialsKey) { [materials] in LocalStore.save(materials, key: "store.materials") } }
     private func persistReminders() { guard ready else { return }; writer.schedule(remindersKey) { [reminders] in LocalStore.save(reminders, key: "store.reminders") } }
     private func persistHistory()   { guard ready else { return }; writer.schedule(historyKey)   { [history]   in LocalStore.save(history,   key: "store.history")   } }
+    private func persistTombstones(){ guard ready else { return }; writer.schedule(tombstonesKey){ [tombstones] in LocalStore.save(tombstones, key: "store.tombstones") } }
+    private func persistTemplates() { guard ready else { return }; writer.schedule(templatesKey) { [remoteTemplates] in LocalStore.save(remoteTemplates, key: "store.templates") } }
 
     /// Write anything still queued. Called when the app backgrounds so a
     /// debounced edit can never be lost to a task kill.
@@ -192,6 +203,7 @@ final class ElementStore: ObservableObject {
         guard let index = elements.firstIndex(where: { $0.id == element.id }) else { return }
         lastDeleted = (elements[index], index)
         elements.remove(at: index)
+        tombstones.append(Tombstone(recordID: element.id, kind: .element))
         log("Element deleted", element.name, Icon.trash)
     }
     /// Put back the most recently deleted element, at its old position.
@@ -199,7 +211,12 @@ final class ElementStore: ObservableObject {
     func undoDelete() -> Bool {
         guard let pending = lastDeleted else { return false }
         lastDeleted = nil
-        elements.insert(pending.element, at: min(pending.index, elements.count))
+        // Drop the tombstone too, otherwise the restore would be undone again
+        // by the next sync.
+        tombstones.removeAll { $0.recordID == pending.element.id && $0.kind == .element }
+        var restored = pending.element
+        restored.dateModified = Date()
+        elements.insert(restored, at: min(pending.index, elements.count))
         log("Delete undone", pending.element.name, Icon.check)
         return true
     }
@@ -226,6 +243,9 @@ final class ElementStore: ObservableObject {
     func mutate(_ id: UUID, _ change: (inout ThermalElement) -> Void) {
         guard let i = elements.firstIndex(where: { $0.id == id }) else { return }
         change(&elements[i])
+        // Stamped here rather than at every call site: a missed timestamp means
+        // an edit that never syncs, which is invisible until data is lost.
+        elements[i].dateModified = Date()
     }
 
     /// The status the engine computes for an element right now.
@@ -308,6 +328,86 @@ final class ElementStore: ObservableObject {
         }
     }
 
+    /// The catalogue the templates screen shows: server rows over built-ins.
+    func templates(for type: ElementType) -> [BuildUpTemplate] {
+        TemplateLibrary.merged(with: remoteTemplates).filter { $0.type == type }
+    }
+
+    // MARK: Sync support
+
+    func clearTombstones(_ ids: Set<UUID>) {
+        guard !ids.isEmpty else { return }
+        tombstones.removeAll { ids.contains($0.recordID) }
+    }
+
+    /// Applies a server copy, unless the local one is newer.
+    ///
+    /// The comparison is on the client-set edit time, which is the same value
+    /// the server used to decide whether to accept our push — so both ends
+    /// resolve a conflict the same way and cannot ping-pong.
+    func applyRemoteElement(_ remote: SyncDTO.RemoteElement) {
+        let id = remote.element.id
+        if remote.deleted {
+            elements.removeAll { $0.id == id }
+            tombstones.removeAll { $0.recordID == id && $0.kind == .element }
+            return
+        }
+        if let i = elements.firstIndex(where: { $0.id == id }) {
+            guard elements[i].dateModified.msSinceEpoch <= remote.updatedMs else { return }
+            // Keep the local photo: image bytes sync separately, and dropping
+            // them here would blank the photo on every pull.
+            var incoming = remote.element
+            incoming.photoData = elements[i].photoData
+            elements[i] = incoming
+        } else {
+            elements.insert(remote.element, at: 0)
+        }
+    }
+
+    func applyRemoteMaterial(_ remote: SyncDTO.RemoteMaterial) {
+        let id = remote.material.id
+        if remote.deleted {
+            materials.removeAll { $0.id == id }
+            tombstones.removeAll { $0.recordID == id && $0.kind == .material }
+            return
+        }
+        if let i = materials.firstIndex(where: { $0.id == id }) {
+            guard materials[i].dateModified.msSinceEpoch <= remote.updatedMs else { return }
+            materials[i] = remote.material
+        } else if !materials.contains(where: {
+            $0.name.compare(remote.material.name, options: .caseInsensitive) == .orderedSame
+        }) {
+            materials.append(remote.material)
+        }
+    }
+
+    func applyRemoteReminder(_ remote: SyncDTO.RemoteReminder) {
+        let id = remote.reminder.id
+        if remote.deleted {
+            reminders.removeAll { $0.id == id }
+            tombstones.removeAll { $0.recordID == id && $0.kind == .reminder }
+            return
+        }
+        if let i = reminders.firstIndex(where: { $0.id == id }) {
+            guard reminders[i].dateModified.msSinceEpoch <= remote.updatedMs else { return }
+            reminders[i] = remote.reminder
+        } else {
+            reminders.insert(remote.reminder, at: 0)
+        }
+    }
+
+    func applyRemoteHistory(_ remote: SyncDTO.RemoteHistory) {
+        let id = remote.entry.id
+        if remote.deleted {
+            history.removeAll { $0.id == id }
+            return
+        }
+        guard !history.contains(where: { $0.id == id }) else { return }
+        history.append(remote.entry)
+        history.sort { $0.date > $1.date }
+        if history.count > 120 { history.removeLast(history.count - 120) }
+    }
+
     // MARK: Materials
     /// Adds a material, replacing any custom one with the same name so the
     /// library cannot fill with near-duplicates.
@@ -331,6 +431,9 @@ final class ElementStore: ObservableObject {
     }
     func deleteMaterial(_ m: Material) {
         materials.removeAll { $0.id == m.id }
+        if m.isCustom {
+            tombstones.append(Tombstone(recordID: m.id, kind: .material))
+        }
     }
 
     // MARK: Reminders
@@ -338,8 +441,20 @@ final class ElementStore: ObservableObject {
         reminders.insert(r, at: 0)
         log("Reminder set", r.kind.rawValue, Icon.bell)
     }
+    /// Pauses or resumes a reminder without deleting it.
+    ///
+    /// `isOn` shipped in 1.0 as a field nothing ever set, so a user who wanted
+    /// to silence a nudge for a week had only one option: delete it and set it
+    /// up again later.
+    func setReminder(_ id: UUID, isOn: Bool) {
+        guard let i = reminders.firstIndex(where: { $0.id == id }) else { return }
+        reminders[i].isOn = isOn
+        reminders[i].dateModified = Date()   // so the change actually syncs
+    }
+
     func deleteReminder(_ r: Reminder) {
         reminders.removeAll { $0.id == r.id }
+        tombstones.append(Tombstone(recordID: r.id, kind: .reminder))
     }
 
     // MARK: History
@@ -399,6 +514,10 @@ final class ElementStore: ObservableObject {
         history = []
         materials = Self.defaultMaterials
         lastDeleted = nil
+        tombstones = []
+        // Deliberately NOT cleared: the catalogue is reference data from the
+        // server, not the user's work, and re-fetching it needs a connection.
+        // remoteTemplates stays.
         writer.flush()
     }
 

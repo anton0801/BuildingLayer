@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support — Building Layer</title>
+<meta name="description" content="Help with Building Layer: build-ups and U-values, cloud backup, moving to a new phone, reports and reminders.">
+<meta name="robots" content="index, follow">
+<meta property="og:title" content="Support — Building Layer">
+<meta property="og:description" content="Help with Building Layer: build-ups and U-values, cloud backup, moving to a new phone, reports and reminders.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/*
+  Colours and type are taken from the app's own design system (Theme.swift), so
+  the page a user lands on from the App Store looks like the app they came from.
+  Committed to a single dark treatment rather than following prefers-color-scheme:
+  the app's identity is navy-and-orange, and a light variant would read as a
+  different product.
+*/
+:root{
+  --bg:#0D1A2D;
+  --bg-deep:#081223;
+  --bg-soft:#13243B;
+  --card:#FFFFFF;
+  --card-blue:#EAF1FB;
+  --card-border:#C6D8ED;
+  --ink:#102A4A;
+  --ink-soft:#44587A;
+  --ink-faint:#7187A6;
+  --title:#FFFFFF;
+  --subtitle:#A9C0DE;
+  --dim:#8AA0BE;
+  --accent:#F77B1C;
+  --accent-hi:#FF9B4E;
+  --accent-deep:#E0660A;
+  --gold:#F4C32C;
+  --pass:#38C172;
+  --cold:#34C6E0;
+  --divider:rgba(255,255,255,.12);
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  background-image:linear-gradient(180deg,var(--bg-deep) 0%,var(--bg) 42%,var(--bg-soft) 100%);
+  background-attachment:fixed;
+  color:var(--title);
+  font-family:Nunito,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  font-size:17px;
+  line-height:1.65;
+  -webkit-font-smoothing:antialiased;
+}
+
+.shell{max-width:780px;margin:0 auto;padding:0 20px 80px}
+
+/* ---------- header ---------- */
+header.site{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:22px 0 18px;border-bottom:1px solid var(--divider);
+}
+.brand{display:flex;align-items:center;gap:11px;text-decoration:none;color:var(--title);margin-right:auto}
+.brand .mark{
+  width:38px;height:38px;border-radius:11px;flex:0 0 auto;
+  background:linear-gradient(135deg,var(--accent-hi),var(--accent) 55%,var(--accent-deep));
+  box-shadow:0 6px 18px rgba(247,123,28,.34);
+  display:grid;place-items:center;
+}
+.brand .mark svg{display:block}
+.brand b{font-weight:800;font-size:17px;letter-spacing:-.01em}
+nav.site{display:flex;gap:8px}
+nav.site a{
+  color:var(--subtitle);text-decoration:none;font-weight:700;font-size:14px;
+  padding:7px 13px;border-radius:999px;border:1px solid transparent;
+}
+nav.site a:hover{color:var(--title);background:rgba(255,255,255,.06)}
+nav.site a[aria-current="page"]{color:#0D1A2D;background:var(--accent);border-color:transparent}
+
+/* ---------- hero ---------- */
+.hero{padding:44px 0 30px}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:600;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 12px;
+}
+h1{
+  margin:0 0 14px;font-size:clamp(30px,6vw,44px);font-weight:800;
+  line-height:1.1;letter-spacing:-.022em;text-wrap:balance;
+}
+.lead{margin:0;color:var(--subtitle);font-size:18px;max-width:60ch}
+.meta{
+  margin:18px 0 0;font-family:"IBM Plex Mono",monospace;
+  font-size:12.5px;color:var(--dim);
+}
+
+/* ---------- the white sheet the content sits on ---------- */
+.sheet{
+  background:var(--card);color:var(--ink);
+  border-radius:20px;border:1px solid var(--card-border);
+  box-shadow:0 24px 60px -28px rgba(0,0,0,.75);
+  padding:34px 32px;
+}
+@media (max-width:560px){ .sheet{padding:26px 20px;border-radius:16px} }
+
+.sheet h2{
+  font-size:23px;font-weight:800;letter-spacing:-.012em;
+  margin:34px 0 10px;padding-top:20px;border-top:1px solid var(--card-border);
+  color:var(--ink);text-wrap:balance;
+}
+.sheet > h2:first-child{margin-top:0;padding-top:0;border-top:0}
+.sheet h3{font-size:18px;font-weight:800;margin:26px 0 8px;color:var(--ink)}
+.sheet h4{font-size:16px;font-weight:700;margin:20px 0 6px;color:var(--ink)}
+.sheet p{margin:0 0 14px;color:var(--ink-soft)}
+.sheet strong{color:var(--ink);font-weight:700}
+.sheet ul{margin:0 0 16px;padding-left:22px;color:var(--ink-soft)}
+.sheet li{margin-bottom:7px}
+.sheet li::marker{color:var(--accent)}
+.sheet a{color:var(--accent-deep);text-decoration:underline;text-underline-offset:2px}
+.sheet a:hover{color:var(--accent)}
+.sheet hr{border:0;border-top:1px solid var(--card-border);margin:28px 0}
+.sheet code{
+  font-family:"IBM Plex Mono",monospace;font-size:14px;
+  background:var(--card-blue);padding:2px 6px;border-radius:5px;color:var(--ink);
+}
+.sheet > p:last-child{margin-bottom:0}
+
+/* ---------- support-page pieces ---------- */
+.cards{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin:0 0 26px}
+/* These sit inside the white sheet, so they take the sheet's palette. Styled
+   for the dark ground they read as holes punched in the page. */
+.card{
+  background:var(--card-blue);border:1px solid var(--card-border);
+  border-radius:14px;padding:18px 20px;
+}
+.card h3{margin:0 0 6px;font-size:16px;font-weight:800;color:var(--ink)}
+.card p{margin:0;color:var(--ink-soft);font-size:15px}
+.card a{color:var(--accent-deep);text-decoration:none;font-weight:700;word-break:break-word}
+.card a:hover{text-decoration:underline}
+.card .muted{margin-top:6px;font-size:13.5px;color:var(--ink-faint)}
+
+details.faq{
+  border-bottom:1px solid var(--card-border);
+  padding:2px 0;
+}
+details.faq:last-of-type{border-bottom:0}
+details.faq > summary{
+  cursor:pointer;list-style:none;padding:16px 34px 16px 0;position:relative;
+  font-weight:700;font-size:17px;color:var(--ink);
+}
+details.faq > summary::-webkit-details-marker{display:none}
+details.faq > summary::after{
+  content:"";position:absolute;right:6px;top:24px;
+  width:9px;height:9px;border-right:2.4px solid var(--accent);border-bottom:2.4px solid var(--accent);
+  transform:rotate(45deg);transition:transform .18s ease;
+}
+details.faq[open] > summary::after{transform:rotate(225deg)}
+details.faq > summary:hover{color:var(--accent-deep)}
+details.faq .answer{padding:0 0 18px}
+details.faq .answer > :last-child{margin-bottom:0}
+
+.path{
+  font-family:"IBM Plex Mono",monospace;font-size:13.5px;
+  background:var(--card-blue);padding:2px 7px;border-radius:5px;
+  color:var(--ink);white-space:nowrap;
+}
+.note{
+  background:var(--card-blue);border-left:3px solid var(--accent);
+  border-radius:0 10px 10px 0;padding:14px 16px;margin:0 0 16px;
+}
+.note p{margin:0;color:var(--ink)}
+
+footer.site{
+  margin-top:34px;padding-top:20px;border-top:1px solid var(--divider);
+  color:var(--dim);font-size:14px;display:flex;gap:16px;flex-wrap:wrap;align-items:center;
+}
+footer.site a{color:var(--subtitle);text-decoration:none}
+footer.site a:hover{color:var(--title);text-decoration:underline}
+footer.site .spacer{margin-left:auto}
+
+a:focus-visible,summary:focus-visible{outline:3px solid var(--accent-hi);outline-offset:3px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body class="support">
+<div class="shell">
+
+  <header class="site">
+    <a class="brand" href="/">
+      <span class="mark" aria-hidden="true">
+        <!-- Three stacked layers: the app's subject, drawn rather than emoji. -->
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+          <path d="M10 2.6 18 6.3 10 10 2 6.3z" fill="#0D1A2D" opacity=".92"/>
+          <path d="M3.6 9.4 10 12.4l6.4-3" stroke="#0D1A2D" stroke-width="1.7"
+                stroke-linecap="round" stroke-linejoin="round" opacity=".62"/>
+          <path d="M3.6 12.9 10 15.9l6.4-3" stroke="#0D1A2D" stroke-width="1.7"
+                stroke-linecap="round" stroke-linejoin="round" opacity=".38"/>
+        </svg>
+      </span>
+      <b>Building Layer</b>
+    </a>
+    <nav class="site">
+      <a href="/privacy.html">Privacy</a>
+      <a href="/support.html" aria-current="page">Support</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <p class="eyebrow">Help</p>
+    <h1>Building Layer Support</h1>
+    <p class="lead">Answers to the questions that come up most, and a direct line if none of them fit.</p>
+    <p class="meta">Building Layer 1.1 · iOS 14 and later</p>
+  </section>
+
+  <main class="sheet">
+
+  <div class="cards">
+    <div class="card">
+      <h3>Email us</h3>
+      <p><a href="mailto:support@buildinglayer.site">support@buildinglayer.site</a></p>
+      <p class="muted">We usually reply within two working days.</p>
+    </div>
+    <div class="card">
+      <h3>Before you write</h3>
+      <p>Tell us your iOS version and what you were doing when it went wrong. If a calculation looks off, the element's layers and thicknesses help most.</p>
+    </div>
+  </div>
+
+  <h2>Getting started</h2>
+
+  <details class="faq">
+    <summary>How do I get a U-value out of it?</summary>
+    <div class="answer">
+      <p>Create an element in the <strong>Elements</strong> tab, then give it a build-up. Two ways:</p>
+      <ul>
+        <li><strong>From a template</strong> — tap <em>Start from a template</em> and pick an assembly close to yours (insulated cavity wall, warm flat roof, suspended timber floor, and four more). Adjust the thicknesses afterwards.</li>
+        <li><strong>Layer by layer</strong> — in the <strong>Layers</strong> tab, add materials from outside inwards.</li>
+      </ul>
+      <p>The <strong>U-Value</strong> tab then shows total R, the U-value, and how each layer contributes.</p>
+      <p>In a hurry: on the last onboarding screen choose <em>Use Sample</em> and you get a fully worked wall to poke at.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Which way round do the layers go?</summary>
+    <div class="answer">
+      <p>Outside first, inside last. The cross-section drawing is labelled <span class="path">OUT</span> on the left and <span class="path">IN</span> on the right, and the flame arrow shows heat leaving the warm side.</p>
+      <p>Order matters for the condensation check, not for the U-value — but getting it backwards will make that check wrong.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Can I work in feet and inches?</summary>
+    <div class="answer">
+      <p>Yes. <span class="path">Settings → Units &amp; Currency → Imperial</span>. Every screen switches, including layer thicknesses and the exported report.</p>
+      <p>Values are stored in SI and converted only for display, so switching back and forth never alters your data.</p>
+    </div>
+  </details>
+
+  <h2>Cloud Backup</h2>
+
+  <details class="faq">
+    <summary>Do I need an account?</summary>
+    <div class="answer">
+      <p>No. There is no sign-up, no email address and no password. Your device identifies itself to the server with a random value it generates on first launch and keeps in the iOS Keychain.</p>
+      <p>The trade-off is that your backup is tied to that install rather than to a person — which is why the transfer code below exists.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>I'm getting a new phone. How do I move my projects?</summary>
+    <div class="answer">
+      <p>On the <strong>old</strong> phone: <span class="path">Settings → Cloud Backup → Get code</span>. A nine-digit code appears.</p>
+      <p>On the <strong>new</strong> phone: <span class="path">Settings → Cloud Backup → I have a code</span> and type it in.</p>
+      <div class="note">
+        <p>The code works once and expires after ten minutes. Anything already in the app on the new phone is replaced by what is being transferred, so export it first if you need it.</p>
+      </div>
+      <p>After the transfer the old phone stops syncing and keeps its projects as a local copy.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Does the app work with no signal?</summary>
+    <div class="answer">
+      <p>Yes — that is the normal case on site. Everything you enter is saved on the device immediately and calculated there. Backup runs in the background when a connection is available.</p>
+      <p>If Settings shows <em>Offline</em>, your work is safe; it uploads when you reconnect.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>How do I delete what's on the server?</summary>
+    <div class="answer">
+      <p><span class="path">Settings → Cloud Backup → Remove my data from the server</span>. It is immediate and permanent, and it includes any photos you uploaded. Your projects stay on the phone.</p>
+      <p>To stop anything further being sent without deleting what is there, switch <em>Back up my projects</em> off.</p>
+      <div class="note">
+        <p>Because backups are anonymous, this in-app control is the only way to remove your data — we have nothing to match an email request against.</p>
+      </div>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>It says this device was signed out</summary>
+    <div class="answer">
+      <p>That happens when the account moved to another phone with a transfer code. Whatever is on this device is untouched and still usable; it is simply no longer backing up.</p>
+      <p>To back this device up as a separate project set, switch <em>Back up my projects</em> off and on again.</p>
+    </div>
+  </details>
+
+  <h2>Calculations</h2>
+
+  <details class="faq">
+    <summary>Why does my U-value differ from my software at work?</summary>
+    <div class="answer">
+      <p>Usually one of three things:</p>
+      <ul>
+        <li><strong>Surface resistances.</strong> The app adds them automatically by element type (Rsi 0.13 for a wall, 0.10 for a roof, 0.17 for a floor, Rse 0.04). Do not add an "air film" layer yourself.</li>
+        <li><strong>Conductivity.</strong> The built-in figures are typical published values. A manufacturer's declared λ for the exact product is usually better — add it as a custom material.</li>
+        <li><strong>Repeating thermal bridges.</strong> Timber studs and joists are not averaged in. The <em>Thermal Bridge</em> screen gives an indicative uplift instead.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>The condensation check says there's a risk — what now?</summary>
+    <div class="answer">
+      <p>The check follows vapour pressure through the build-up using each layer's µ value and flags the point where it reaches saturation. The usual fixes, in order of how well they work:</p>
+      <ul>
+        <li>Fit a vapour control layer on the warm side (toggle it on the Condensation screen to see the effect).</li>
+        <li>Move more insulation to the outside of the cold interface, so that point stays warmer.</li>
+        <li>Add a ventilated cavity outboard of the insulation.</li>
+      </ul>
+      <p>The per-interface list shows the local humidity at each point; 100% is where moisture drops out. The outdoor face is greyed because it sits in outside air and is not judged.</p>
+      <div class="note">
+        <p>This is the simplified steady-state method — appropriate for a site tool and far better than a rule of thumb, but not a transient hygrothermal simulation. Treat it as a warning flag, not a certificate.</p>
+      </div>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Where do the kWh and cost figures come from?</summary>
+    <div class="answer">
+      <p>From the heating hours and energy price in <span class="path">Settings → Calculation Defaults</span>. The default is 4380 hours, roughly half a year. Both are yours to change, and every energy and payback figure in the app follows them.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>Can I use this for building control or an EPC?</summary>
+    <div class="answer">
+      <p>No. Building Layer is an estimating and design tool. It does not certify compliance, produce a legal document, or replace an accredited assessment. Check anything that matters against your regional standard and, where required, an accredited assessor.</p>
+    </div>
+  </details>
+
+  <h2>Reminders, reports and photos</h2>
+
+  <details class="faq">
+    <summary>My reminders aren't arriving</summary>
+    <div class="answer">
+      <ul>
+        <li>Check <span class="path">iOS Settings → Building Layer → Notifications</span> is allowed.</li>
+        <li>Check <span class="path">Settings → Reminders</span> in the app is on, and try <em>Send Test Notification</em>.</li>
+        <li>A reminder must be set for a time in the future — the app refuses a past time rather than silently accepting it.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>How do I get a report out?</summary>
+    <div class="answer">
+      <p><span class="path">Reports → Reminders &amp; Reports</span>, choose the sections you want, then <em>Export PDF</em> or <em>Export CSV</em>. Both go through the standard iOS share sheet, so you can mail, save to Files, or send to any app.</p>
+      <p>The CSV has one row per element and one per layer, grouped, and opens cleanly in Excel and Numbers.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>What happens to photos I attach?</summary>
+    <div class="answer">
+      <p>They are resized on the device before being stored, kept with the element, and included in the report as evidence. With Cloud Backup on they are also copied to the server, held outside any public directory, and retrievable only by your device.</p>
+      <p>Deleting the server copy deletes the photos with it.</p>
+    </div>
+  </details>
+
+  <h2>Data and privacy</h2>
+
+  <details class="faq">
+    <summary>What exactly leaves my device?</summary>
+    <div class="answer">
+      <p>With Cloud Backup off: nothing. With it on: your elements, layers, materials, notes, reminders, activity history and attached photos, plus the app version, iOS version and device model for diagnostics.</p>
+      <p>Never: your name, email, phone number, Apple ID, advertising identifier or location. There is no analytics, no advertising and no third-party SDK in the app at all.</p>
+      <p>The full detail is in the <a href="/privacy.html">Privacy Policy</a>.</p>
+    </div>
+  </details>
+
+  <details class="faq">
+    <summary>How do I wipe everything on the device?</summary>
+    <div class="answer">
+      <p><span class="path">Settings → Data → Erase All Data</span>. That clears elements, reminders and history, and resets the material library. It does not touch the server copy — remove that separately if you want it gone.</p>
+    </div>
+  </details>
+
+  <h2>Requirements</h2>
+  <p>Building Layer runs on iPhone and iPad with iOS 14.0 or later. It is free, has no in-app purchases, no subscription and no advertising.</p>
+
+  </main>
+
+  <footer class="site">
+    <span>Building Layer — thermal calculator for building elements</span>
+    <span class="spacer"></span>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/support.html">Support</a>
+  </footer>
+
+</div>
+</body>
+</html>
